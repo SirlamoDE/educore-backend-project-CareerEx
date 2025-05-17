@@ -9,7 +9,7 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const User = require('../models/user-model');
-const { registerSchema } = require('../../validators/auth-validator');
+const { registerSchema, loginSchema } = require('../../validators/auth-validator');
 
 // Register a new user
 const registerUser = async(userData)=>{
@@ -62,7 +62,54 @@ const registerUser = async(userData)=>{
     }
 }
 
+
+// Login a user
+const loginUser = async(userData)=>{
+    // Validate user data
+    const { error } = loginSchema.validate(userData);
+    if (error) {
+        
+        return { error: error.details[0].message };
+    }
+    
+    try{
+        // Destructure user data to get email and password
+        const { email, password } = userData;
+        // Find the user by email
+        const user = await User.findOne({email});
+        if (!user) {
+            return {error: 'Invalid email or password'};
+        }
+
+        // Check if the password is correct
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
+            return {error: 'Invalid email or password'};
+        }
+        // Generate a JWT token
+        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+            expiresIn: process.env.JWT_EXPIRATION || '1h'
+        });
+        // Return the user data and token
+        return {
+            user: {
+                id: user._id,
+                username: user.username,
+                email: user.email,
+                role: user.role
+            },
+            token
+        };
+    }
+    catch(error){
+        console.error('Error logging in user:', error.message);
+        return {error: 'Internal server error'};
+    }
+
+}
+
 // export the registerUser function
 module.exports = {
-    registerUser
+    registerUser,
+    loginUser
 }
