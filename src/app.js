@@ -1,5 +1,8 @@
 const express = require('express');
 const authRoutes = require('./api/routes/auth-routes');
+const userRoutes = require('./api/routes/user-routes');
+const courseRoutes = require('./api/routes/course-routes')
+const enrollmentRoutes = require('./api/routes/enrollment-routes')
 
 const app = express();
 
@@ -15,6 +18,15 @@ app.get('/', (req,res)=>{
 })
 
 app.use('/api/auth', authRoutes);
+
+//user routes
+app.use('/api/users', userRoutes);
+
+//course route
+app.use('/api/courses', courseRoutes)
+
+// enrollment route
+app.use('/api/enrollments', enrollmentRoutes);
 
 
 

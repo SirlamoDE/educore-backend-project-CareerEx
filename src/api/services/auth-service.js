@@ -19,23 +19,21 @@ const registerUser = async(userData)=>{
         return { error: error.details[0].message };
     }
     try{
-        const { username, email, password } = userData;
+        const { firstName,lastName,email, password } = userData;
         // Check if user already exists (by email or username)
         const existingEmail = await User.findOne({ email });
         if (existingEmail) {
             return {error: 'User with this email already exists'};
         }
-        const existingUsername = await User.findOne({ username });
-        if (existingUsername) {
-            return {error: 'Username already taken'};
-        }
+     
         // Always assign 'student' role at registration
         const userRole = 'student';
         // Hash the password
         const hashedPassword = await bcrypt.hash(password, 10);
         // Create a new user
         const newUser = new User({
-            username,
+            firstName: userData.firstName,
+            lastName: userData.lastName,
             email,
             password: hashedPassword,
             role: userRole
@@ -50,7 +48,7 @@ const registerUser = async(userData)=>{
         return {
             user: {
                 id: savedUser._id,
-                username: savedUser.username,
+                firstName: savedUser.firstName,
                 email: savedUser.email,
                 role: savedUser.role
             },
@@ -93,8 +91,9 @@ const loginUser = async(userData)=>{
         // Return the user data and token
         return {
             user: {
+                message:"login successful",
                 id: user._id,
-                username: user.username,
+                firstName: user.firstName,
                 email: user.email,
                 role: user.role
             },
