@@ -1,8 +1,7 @@
 
 // Import the courseService from the service layer
 const courseService = require('../services/course-service');
-
-
+const asyncHandler = require('express-async-handler');
 
 // Controller to handle course creation
 const createCourses = async (req, res) => {
@@ -45,13 +44,28 @@ const getByInstructorNameController = async (req, res) => {
 };
 
 
-//getAllCourses
+//geting course details controller
+const getCourseDetailsHandler = asyncHandler(async (req, res, next) => {
+    const identifier = req.params.identifier; // the identifier can be course ID or slug
+
+    // The controller simply passes the identifier to the service.
+    // The service handles finding the course.
+    const courseDetails = await courseService.getCourseDetails(identifier);
+
+   
+    res.status(200).json({
+        success: true,
+        message: 'Course details retrieved successfully.',
+        data: courseDetails, // This will include the enrolledStudentCount
+    });
+});
 
 
 module.exports = {
   createCourses,
   getAllCoursesController,
-  getByInstructorNameController
+  getByInstructorNameController,
+  getCourseDetailsHandler
 };
 
 

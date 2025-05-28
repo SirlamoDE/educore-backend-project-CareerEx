@@ -27,11 +27,21 @@ const userSchema = new mongoose.Schema({
         type:String,
         default:""
     },
+    verified:{
+        type:Boolean,
+        default:false
+    },
     role: {
         type: String,
         enum: ['student', 'instructor', 'admin'],
         default: 'student',
         required: true
+    },
+    resetPasswordToken: {
+        type:String
+    },
+    resetPasswordExpires:{
+        type: Date
     }
 }, { timestamps: true });
 

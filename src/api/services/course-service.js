@@ -3,7 +3,8 @@ const { courseSchemaValidator } = require('../../validators/course-validator');
 const Course = require('../models/course-model');
 const User = require('../models/user-model');
 const slugify = require('slugify');
-
+const Enrollment = require('../models/enrollment-model');
+const mongoose = require('mongoose');
 
 
 // Helper to generate a unique slug using instructor's first name
@@ -80,8 +81,73 @@ const getCoursesByInstructorName = async (firstName, lastName) => {
 };
 
 
+
+
+//course details
+//Milestone 3 sub_task 3: Implement the getCourseDetails function to fetch course details along with the number of enrolled students
+
+const getCourseDetails = async (identifier) => {
+    console.log(`[COURSE_SERVICE] getCourseDetails (public) called for identifier: "${identifier}"`);
+
+    let courseQuery;
+    // Determine if the identifier is likely an ObjectId or a slug
+    if (mongoose.Types.ObjectId.isValid(identifier)) {
+        courseQuery = Course.findById(identifier);
+    } else {
+        courseQuery = Course.findOne({ slug: identifier });
+    }
+
+    // Fetch the course and populate instructor details
+    const course = await courseQuery
+        .populate({
+            path: 'instructor', // Field name in Course schema that refs User
+            select: 'firstName lastName email' // Select fields you want to show for the instructor
+        });
+        
+
+    if (!course) {
+        console.warn('[COURSE_SERVICE] Course not found with identifier:', identifier);
+        const error = new Error('Course not found.');
+        error.statusCode = 404;
+        throw error;
+    }
+
+    // For this public route, only show published courses
+    if (!course.isPublished) {
+        console.warn(`[COURSE_SERVICE] Attempted to access unpublished course publicly: ${course.slug} (ID: ${course._id})`);
+        const error = new Error('Course not found.'); // From a public perspective, an unpublished course is "not found"
+        error.statusCode = 404;
+        throw error;
+    }
+
+    // Count the number of students enrolled in this course
+    // We only need the count, not the full enrollment documents
+    const enrolledStudentCount = await Enrollment.countDocuments({ course: course._id });
+    console.log(`[COURSE_SERVICE] Course "${course.title}" has ${enrolledStudentCount} enrolled students.`);
+
+
+    // If you want to include modules and lessons later, you would populate them here as well,
+    // potentially filtering for lessons that are 'isPreviewable' for public view.
+    // For now, we'll just return the main course details.
+
+    // Return the course object and add the enrolledStudentCount
+    // We use toObject() or toJSON() to be able to add a new property to the Mongoose document
+    const courseObject = course.toObject(); // Or course.toJSON();
+    courseObject.enrolledStudentCount = enrolledStudentCount;
+
+    // You might want to explicitly remove certain fields from the course object if they shouldn't be public
+    // delete courseObject.__v; // Example
+
+    return courseObject;
+};
+
+
+
+
+
 module.exports = {
   createCourse,
   getAllCourses,
-  getCoursesByInstructorName
+  getCoursesByInstructorName,
+  getCourseDetails
 };

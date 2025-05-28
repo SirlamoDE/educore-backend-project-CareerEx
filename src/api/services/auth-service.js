@@ -18,6 +18,7 @@ const registerUser = async(userData)=>{
     if (error) {
         return { error: error.details[0].message };
     }
+    
     try{
         const { firstName,lastName,email, password } = userData;
         // Check if user already exists (by email or username)
@@ -26,7 +27,7 @@ const registerUser = async(userData)=>{
             return {error: 'User with this email already exists'};
         }
      
-        // Always assign 'student' role at registration
+        // Assign 'student' role at registration(JUST means everyone is default as student)
         const userRole = 'student';
         // Hash the password
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -41,18 +42,18 @@ const registerUser = async(userData)=>{
         // Save the user to the database
         const savedUser = await newUser.save();
         // Generate a JWT token
-        const token = jwt.sign({ id: savedUser._id }, process.env.JWT_SECRET, {
+        const Token = jwt.sign({ id: savedUser._id }, process.env.JWT_SECRET, {
             expiresIn: process.env.JWT_EXPIRATION || '1h'
         });
         // Return the user data and token
         return {
             user: {
-                id: savedUser._id,
-                firstName: savedUser.firstName,
-                email: savedUser.email,
-                role: savedUser.role
+                id: savedUser?._id,
+                firstName: savedUser?.firstName,
+                email: savedUser?.email,
+                role: savedUser?.role
             },
-            token
+            Token
         };
     }catch(error){
         console.error('Error registering user:', error.message);
@@ -76,28 +77,30 @@ const loginUser = async(userData)=>{
         // Find the user by email
         const user = await User.findOne({email});
         if (!user) {
-            return {error: 'Invalid email or password'};
+            return res.status(404).json({message: 'Invalid email or password'});
         }
 
         // Check if the password is correct
-        const isPasswordValid = await bcrypt.compare(password, user.password);
+        const isPasswordValid = await bcrypt.compare(password, user?.password);
         if (!isPasswordValid) {
-            return {error: 'Invalid email or password'};
+            return res.status(400).json({message: 'Invalid email or password'});
         }
-        // Generate a JWT token
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-            expiresIn: process.env.JWT_EXPIRATION || '1h'
-        });
+        // Generate a JWT token(ACCESS TOKEN)
+        const accessToken = jwt.sign(
+            { id: user?._id }, 
+            process.env.JWT_SECRET, 
+            {expiresIn: process.env.JWT_EXPIRATION || '1h'}
+        );
         // Return the user data and token
         return {
+            message:"login successful",
+            accessToken,
             user: {
-                message:"login successful",
-                id: user._id,
-                firstName: user.firstName,
-                email: user.email,
-                role: user.role
-            },
-            token
+                id: user?._id,
+                firstName: user?.firstName,
+                email: user?.email,
+                role: user?.role
+            }
         };
     }
     catch(error){
