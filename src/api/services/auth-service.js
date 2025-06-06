@@ -39,7 +39,6 @@ const registerUser = async(userData)=>{
         const emailToken = crypto.randomBytes(32).toString('hex');
         // Create a new user (not verified yet)
         const newUser = new User({
-            username,
             email,
             password: hashedPassword,
             role: userRole,
