@@ -21,7 +21,7 @@ const registerUser = async(userData)=>{
         return { error: error.details[0].message };
     }
     try{
-        const { username, email, password } = userData;
+        const { username, email, password, firstName, lastName, state } = userData;
         // Check if user already exists (by email or username)
         const existingEmail = await User.findOne({ email });
         if (existingEmail) {
@@ -44,7 +44,10 @@ const registerUser = async(userData)=>{
             password: hashedPassword,
             role: userRole,
             emailToken,
-            verified: false
+            verified: false,
+            firstName: firstName || '',
+            lastName: lastName || '',
+            state: state || ''
         });
         // Save the user to the database
         const savedUser = await newUser.save();
