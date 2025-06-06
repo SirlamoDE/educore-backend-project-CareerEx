@@ -6,7 +6,7 @@ const User = require( '../models/user-model.js');
 
 const isAuthenticated = async (req, res, next) => {
     const authHeader = req.headers['authorization']; // More robust check
-    const token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.split(' ')[1] : null;
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : null;
 
     if (!token) {
         return res.status(401).json({ message: 'Authentication failed: Please,you need to Login' });
@@ -37,21 +37,18 @@ const isAuthenticated = async (req, res, next) => {
     }
 };
 
-// isAdmin and isInstructor can remain as they are,
-// because they will now receive a full user object on req.user from the improved isAuthenticated
+
 const isAdmin = async (req, res, next) => {
     // req.user is now the full user object from the DB, set by isAuthenticated
-    if (req.user && req.user.role === 'admin') {
+    if ( req.user.role === 'admin') {
         next();
     } else {
-        // If req.user is not set, isAuthenticated likely failed and sent a response.
-        // This is a fallback or if somehow isAdmin is called without isAuthenticated.
         return res.status(403).json({ message: 'Access denied: Admin privileges required' });
     }
 };
-
+// req.user is now the full user object from the DB, no need for optional chaining
 const isInstructor = async (req, res, next) => {
-    if (req.user && req.user.role === 'instructor') {
+    if (req.user.role === 'instructor') {
         next();
     } else {
         return res.status(403).json({ message: 'Access denied: Instructor privileges required' });

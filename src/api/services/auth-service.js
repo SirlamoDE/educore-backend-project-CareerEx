@@ -8,8 +8,10 @@
 
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const User = require('../models/user-model');
-const { registerSchema, loginSchema } = require('../../validators/auth-validator');
+const sendMail = require('../../utils/mailer');
+const { registerSchema } = require('../../validators/auth-validator');
 
 // Register a new user
 const registerUser = async(userData)=>{
@@ -18,42 +20,44 @@ const registerUser = async(userData)=>{
     if (error) {
         return { error: error.details[0].message };
     }
-    
     try{
-        const { firstName,lastName,email, password } = userData;
+        const { username, email, password } = userData;
         // Check if user already exists (by email or username)
         const existingEmail = await User.findOne({ email });
         if (existingEmail) {
             return {error: 'User with this email already exists'};
         }
-     
-        // Assign 'student' role at registration(JUST means everyone is default as student)
+        const existingUsername = await User.findOne({ username });
+        if (existingUsername) {
+            return {error: 'Username already taken'};
+        }
+        // Always assign 'student' role at registration
         const userRole = 'student';
         // Hash the password
         const hashedPassword = await bcrypt.hash(password, 10);
-        // Create a new user
+        // Generate email verification token
+        const emailToken = crypto.randomBytes(32).toString('hex');
+        // Create a new user (not verified yet)
         const newUser = new User({
-            firstName: userData.firstName,
-            lastName: userData.lastName,
+            username,
             email,
             password: hashedPassword,
-            role: userRole
+            role: userRole,
+            emailToken,
+            verified: false
         });
         // Save the user to the database
         const savedUser = await newUser.save();
-        // Generate a JWT token
-        const Token = jwt.sign({ id: savedUser._id }, process.env.JWT_SECRET, {
-            expiresIn: process.env.JWT_EXPIRATION || '1h'
+        // Send verification email
+        const verifyUrl = `https://educore-backend-project-careerex-production.up.railway.app/api/auth/verify-email/${emailToken}`;
+        await sendMail({
+            to: savedUser.email,
+            subject: 'Verify your EduCore account',
+            html: `<p>Hello,</p><p>Thank you for registering. Please verify your email by clicking the link below:</p><a href="${verifyUrl}">${verifyUrl}</a><p>If you did not register, please ignore this email.</p>`
         });
-        // Return the user data and token
+        // Return a message to the client
         return {
-            user: {
-                id: savedUser?._id,
-                firstName: savedUser?.firstName,
-                email: savedUser?.email,
-                role: savedUser?.role
-            },
-            Token
+            message: 'Registration successful! Please check your email to verify your account.'
         };
     }catch(error){
         console.error('Error registering user:', error.message);
@@ -61,57 +65,64 @@ const registerUser = async(userData)=>{
     }
 }
 
-
-// Login a user
-const loginUser = async(userData)=>{
-    // Validate user data
-    const { error } = loginSchema.validate(userData);
-    if (error) {
-        
-        return { error: error.details[0].message };
+// Verify email token
+const verifyEmail = async (token) => {
+    const user = await User.findOne({ emailToken: token });
+    if (!user) {
+        return { error: 'Invalid or expired verification token.' };
     }
-    
-    try{
-        // Destructure user data to get email and password
-        const { email, password } = userData;
-        // Find the user by email
-        const user = await User.findOne({email});
-        if (!user) {
-            return res.status(404).json({message: 'Invalid email or password'});
-        }
+    user.verified = true;
+    user.emailToken = undefined;
+    await user.save();
+    return { message: 'Email verified successfully. You can now log in.' };
+};
 
-        // Check if the password is correct
-        const isPasswordValid = await bcrypt.compare(password, user?.password);
-        if (!isPasswordValid) {
-            return res.status(400).json({message: 'Invalid email or password'});
-        }
-        // Generate a JWT token(ACCESS TOKEN)
-        const accessToken = jwt.sign(
-            { id: user?._id }, 
-            process.env.JWT_SECRET, 
-            {expiresIn: process.env.JWT_EXPIRATION || '1h'}
-        );
-        // Return the user data and token
-        return {
-            message:"login successful",
-            accessToken,
-            user: {
-                id: user?._id,
-                firstName: user?.firstName,
-                email: user?.email,
-                role: user?.role
-            }
-        };
-    }
-    catch(error){
-        console.error('Error logging in user:', error.message);
-        return {error: 'Internal server error'};
-    }
+// Request password reset
+const requestPasswordReset = async (email) => {
+    const user = await User.findOne({ email });
+    if (!user) return { error: 'No account with that email exists.' };
 
-}
+    // Generate token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+    user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+    await user.save();
+
+    const resetUrl = `https://educore-backend-project-careerex-production.up.railway.app/api/auth/reset-password/${resetToken}`;
+
+    await sendMail({
+        to: user.email,
+        subject: 'Password Reset Request',
+        html: `<p>Hello,</p>
+               <p>You requested to reset your password. Click the link below to proceed:</p>
+               <a href="${resetUrl}">${resetUrl}</a>
+               <p>This link will expire in 1 hour.</p>`
+    });
+
+    return { message: 'Password reset link sent to your email.' };
+};
+
+// Reset password
+const resetPassword = async (token, newPassword) => {
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    const user = await User.findOne({
+        resetPasswordToken: hashedToken,
+        resetPasswordExpires: { $gt: Date.now() }
+    });
+    if (!user) return { error: 'Invalid or expired password reset token.' };
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    return { message: 'Password has been reset successfully.' };
+};
 
 // export the registerUser function
 module.exports = {
     registerUser,
-    loginUser
-}
+    verifyEmail,
+    requestPasswordReset,
+    resetPassword
+};

@@ -12,7 +12,7 @@ app.use(express.urlencoded({ extended: true }));
 app.get('/', (req,res)=>{
     console.log(`The request url is: ${req.url}`);//added to monitor the url of the request source 
     console.log(`The request headers are: ${JSON.stringify(req.headers)}`);
-    res.send(`Welcome to the root route of the app`);
+    res.send(`Welcome to the root route of the app. Building secure and roburst backend app is our primary goal`);
 
 })
 

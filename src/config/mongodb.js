@@ -14,5 +14,4 @@ const connectDB = async () => {
 }
 
 module.exports = connectDB;
-// Compare this snippet from src/app.js:
-// const express = require('express');
+
