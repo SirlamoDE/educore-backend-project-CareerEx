@@ -1,10 +1,16 @@
-
+// src/utils/mailer.js
 const nodemailer = require('nodemailer');
-const dotenv = require('dotenv');
+// const dotenv = require('dotenv');
 // Adjust path to .env if mailer.js is not in src/utils directly relative to project root
-dotenv.config({ path: require('path').join(__dirname, '../../../.env') }); 
+// dotenv.config({ path: require('path').join(__dirname, '../../.env') }); 
+                                               
 
 const sendMail = async (options) => {
+    console.log('--- Mailer Environment Variables ---');
+    console.log('EMAIL_HOST:', process.env.EMAIL_HOST);
+    console.log('EMAIL_PORT:', process.env.EMAIL_PORT);
+    console.log('EMAIL_USERNAME:', process.env.EMAIL_USERNAME);
+    console.log('EMAIL_PASSWORD exists:', !!process.env.EMAIL_PASSWORD);
     const transporter = nodemailer.createTransport({
         host: process.env.EMAIL_HOST, // Should be smtp.gmail.com
         port: parseInt(process.env.EMAIL_PORT), // Should be 587 or 465

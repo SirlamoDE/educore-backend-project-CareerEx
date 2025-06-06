@@ -21,22 +21,23 @@ const registerUser = async(userData)=>{
         return { error: error.details[0].message };
     }
     try{
-        const { username, email, password, firstName, lastName, state } = userData;
+        const { email, password, firstName, lastName, state } = userData;
         // Check if user already exists (by email or username)
         const existingEmail = await User.findOne({ email });
         if (existingEmail) {
             return {error: 'User with this email already exists'};
         }
-        const existingUsername = await User.findOne({ username });
-        if (existingUsername) {
-            return {error: 'Username already taken'};
-        }
+        // const existingUsername = await User.findOne({ username });
+        // if (existingUsername) {
+            // return {error: 'Username already taken'};
+        // }
         // Always assign 'student' role at registration
         const userRole = 'student';
         // Hash the password
         const hashedPassword = await bcrypt.hash(password, 10);
         // Generate email verification token
         const emailToken = crypto.randomBytes(32).toString('hex');
+        console.log('Generated email verification token:', emailToken);
         // Create a new user (not verified yet)
         const newUser = new User({
             email,
@@ -50,8 +51,10 @@ const registerUser = async(userData)=>{
         });
         // Save the user to the database
         const savedUser = await newUser.save();
+        console.log('Saved user for verification:', savedUser);
         // Send verification email
         const verifyUrl = `https://educore-backend-project-careerex-production.up.railway.app/api/auth/verify-email/${emailToken}`;
+        console.log('Verification URL sent to user:', verifyUrl);
         await sendMail({
             to: savedUser.email,
             subject: 'Verify your EduCore account',
@@ -77,6 +80,40 @@ const verifyEmail = async (token) => {
     user.emailToken = undefined;
     await user.save();
     return { message: 'Email verified successfully. You can now log in.' };
+};
+
+//after user is verified, they can log in
+const loginUser = async (email, password) => {
+    const user = await User.findOne({ email });
+    if (!user) {
+        return { error: 'Invalid email or password.' };
+    }
+    if (!user.verified) {
+        return { error: 'Please verify your email before logging in.' };
+    }
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+        return { error: 'Invalid email or password.' };
+    }
+    //since email and password matches database records
+    // Generate JWT token
+    const token = jwt.sign(
+        { userId: user._id, role: user.role },
+        process.env.JWT_SECRET,
+        { expiresIn: '1d' } // Token expires in 1 day
+    );
+    // Return user data and token
+    return {
+        user: {
+            id: user._id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            state: user.state,
+            role: user.role
+        },
+        token
+    };
 };
 
 // Request password reset
@@ -125,6 +162,7 @@ const resetPassword = async (token, newPassword) => {
 module.exports = {
     registerUser,
     verifyEmail,
+    loginUser,
     requestPasswordReset,
     resetPassword
-};
+}

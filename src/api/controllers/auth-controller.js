@@ -5,65 +5,56 @@
  * @date 2025-15-05
  * @version 1.0.1
  */
-const { registerUser, verifyEmail, requestPasswordReset, resetPassword } = require('../services/auth-service');
+const { registerUser, verifyEmail,loginUser, requestPasswordReset, resetPassword } = require('../services/auth-service');
 const asyncHandler = require('express-async-handler');
-
 
 
 //Register a user
 const register = asyncHandler(async(req,res,next)=>{
-    
-    try {
-        const result = await registerUser(req.body);
-        if (result.error) {
+    const result = await registerUser(req.body);
+    if (result.error) {
         const err = new Error(result.error);
         err.statusCode = result.statusCode || 400;
         return next(err);
-        }
-        res.status(201).json(result);
-    }catch (error) {
-        console.error('Error registering user:', error.message);
-        res.status(500).json({message: 'Internal server error'});
-        
     }
+    res.status(201).json(result);
 });
 
-//Login a user
-const login = async(req,res)=>{
-    try{
-        const result = await authService.loginUser(req.body);
-        if (result.error) {
-            return res.status(400).json({message: result.error});
-        }
-        res.status(200).json(result);
-    }catch(error){
-        console.error('Error logging in user:', error.message);
-        res.status(500).json({message: 'Internal server error'});
-    }
-}
 
 // Email verification handler
-const verifyEmailHandler = async (req, res) => {
+const verifyEmailHandler = asyncHandler(async (req, res, next) => {
     const { token } = req.params;
     const result = await verifyEmail(token);
     if (result.error) {
         return res.status(400).json({ message: result.error });
     }
     res.json({ message: result.message });
-};
+});
+
+// once a user email verification is successful, they can login
+const loginHandler = asyncHandler(async (req, res, next) => {
+    const { email, password } = req.body;
+    const result = await loginUser(email, password);
+    if (result.error) {
+        const err = new Error(result.error);
+        err.statusCode = result.statusCode || 400;
+        return next(err);
+    }
+    res.json(result);
+});
 
 // Forgot password handler
-const forgotPassword = async (req, res) => {
+const forgotPassword = asyncHandler(async (req, res, next) => {
     const { email } = req.body;
     const result = await requestPasswordReset(email);
     if (result.error) {
         return res.status(400).json({ message: result.error });
     }
     res.json({ message: result.message });
-};
+});
 
 // Reset password handler
-const resetPasswordHandler = async (req, res) => {
+const resetPasswordHandler = asyncHandler(async (req, res, next) => {
     const { token } = req.params;
     const { password } = req.body;
     const result = await resetPassword(token, password);
@@ -71,12 +62,12 @@ const resetPasswordHandler = async (req, res) => {
         return res.status(400).json({ message: result.error });
     }
     res.json({ message: result.message });
-};
+});
 
 
 module.exports = { 
     register,
-    login,
+    loginHandler,
     verifyEmailHandler,
     forgotPassword,
     resetPasswordHandler
