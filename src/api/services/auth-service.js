@@ -120,6 +120,9 @@ const loginUser = async (email, password) => {
 const requestPasswordReset = async (email) => {
     const user = await User.findOne({ email });
     if (!user) return { error: 'No account with that email exists.' };
+    if (!user.verified) {
+        return { error: 'Please verify your email before requesting a password reset.' };
+    }
 
     // Generate token
     const resetToken = crypto.randomBytes(32).toString('hex');
@@ -132,7 +135,7 @@ const requestPasswordReset = async (email) => {
     await sendMail({
         to: user.email,
         subject: 'Password Reset Request',
-        html: `<p>Hello,</p>
+        html: `<p>Hello,${user.firstName}</p>
                <p>You requested to reset your password. Click the link below to proceed:</p>
                <a href="${resetUrl}">${resetUrl}</a>
                <p>This link will expire in 1 hour.</p>`

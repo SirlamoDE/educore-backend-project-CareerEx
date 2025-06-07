@@ -2,7 +2,8 @@ const express = require('express');
 const authRoutes = require('./api/routes/auth-routes');
 const userRoutes = require('./api/routes/user-routes');
 const courseRoutes = require('./api/routes/course-routes')
-const enrollmentRoutes = require('./api/routes/enrollment-routes')
+const enrollmentRoutes = require('./api/routes/enrollment-routes');
+const { isAuthenticated } = require('./api/middlewares/auth-middleware');
 
 const app = express();
 
@@ -25,12 +26,12 @@ app.use('/api/users', userRoutes);
 app.use('/api/courses', courseRoutes)
 
 // enrollment route
-app.use('/api/enrollments', enrollmentRoutes);
+app.use('/api/enrollments',isAuthenticated, enrollmentRoutes);
 
 //milestone 3 begins here
 
 // student sees courses they are enrolled in
-app.use('/api/enrollments/by-student', enrollmentRoutes);
+app.use('/api/enrollments/by-student',isAuthenticated, enrollmentRoutes);
 
 //course details route
 app.use('/api/courses/:identifier', courseRoutes);

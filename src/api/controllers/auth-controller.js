@@ -56,7 +56,7 @@ const forgotPassword = asyncHandler(async (req, res, next) => {
 // Reset password handler
 const resetPasswordHandler = asyncHandler(async (req, res, next) => {
     const { token } = req.params;
-    const { password } = req.body;
+    const { password } = req.body; // confirmPassword is only for validation
     const result = await resetPassword(token, password);
     if (result.error) {
         return res.status(400).json({ message: result.error });
