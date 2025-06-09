@@ -12,6 +12,7 @@ const crypto = require('crypto');
 const User = require('../models/user-model');
 const sendMail = require('../../utils/mailer');
 const { registerSchema } = require('../../validators/auth-validator');
+const asyncHandler = require('express-async-handler');
 
 // Register a new user
 const registerUser = async(userData)=>{
@@ -27,10 +28,7 @@ const registerUser = async(userData)=>{
         if (existingEmail) {
             return {error: 'User with this email already exists'};
         }
-        // const existingUsername = await User.findOne({ username });
-        // if (existingUsername) {
-            // return {error: 'Username already taken'};
-        // }
+
         // Always assign 'student' role at registration
         const userRole = 'student';
         // Hash the password
@@ -52,6 +50,7 @@ const registerUser = async(userData)=>{
         // Save the user to the database
         const savedUser = await newUser.save();
         console.log('Saved user for verification:', savedUser);
+
         // Send verification email
         const verifyUrl = `https://educore-backend-project-careerex-production.up.railway.app/api/auth/verify-email/${emailToken}`;
         console.log('Verification URL sent to user:', verifyUrl);
@@ -60,6 +59,7 @@ const registerUser = async(userData)=>{
             subject: 'Verify your EduCore account',
             html: `<p>Hello,</p><p>Thank you for registering. Please verify your email by clicking the link below:</p><a href="${verifyUrl}">${verifyUrl}</a><p>If you did not register, please ignore this email.</p>`
         });
+
         // Return a message to the client
         return {
             message: 'Registration successful! Please check your email to verify your account.'
@@ -116,6 +116,87 @@ const loginUser = async (email, password) => {
     };
 };
 
+//user can request to change their password
+
+/**
+ * @desc Request password reset
+ * @param {string} email - User's email address
+ * @return {Promise<Object>} - Result object containing success message or error
+ * @description This function allows a user to request a password reset by providing their email address.
+ * It generates a reset token, saves it to the user's record, and sends an email with the reset link.
+ */
+
+
+const changePassword = async (userId, currentPassword, newPassword) => { // Removed asyncHandler from here, controller handles it
+    console.log(`[AUTH_SERVICE] changePassword attempt for user: ${userId}`);
+
+    try {
+        // 1. Fetch user WITH their current password hash
+        const user = await User.findById(userId).select('+password');
+
+        if (!user) {
+            const err = new Error('User not found.');
+            err.statusCode = 404;
+            throw err;
+        }
+
+        // 2. Verify current password
+        // bcrypt.compare returns a Promise, so you MUST await it.
+        const isCurrentPasswordMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isCurrentPasswordMatch) {
+            const err = new Error('Incorrect current password.');
+            err.statusCode = 401; // Or 400
+            throw err;
+        }
+
+        // 3. CORRECTED: Check if new plain text password is the same as the current plain text password
+        //    Since isCurrentPasswordMatch is true, 'currentPassword' IS the user's old password.
+        if (currentPassword === newPassword) {
+            const err = new Error('New password cannot be the same as the current password.');
+            err.statusCode = 400;
+            throw err;
+        }
+
+        // 4. Hash the new password
+        // bcrypt.hash also returns a Promise, so you MUST await it.
+        user.password = await bcrypt.hash(newPassword, 10);
+        await user.save(); // Saves the user document with the new password
+
+        console.log(`[AUTH_SERVICE] Password changed successfully for user: ${user.email}`);
+
+        // 5. Send Password Change Notification Email
+        try {
+            const textMessage = `Hello ${user.firstName || user.username || 'User'},\n\nThis is a confirmation that the password for your EduCore account associated with the email ${user.email} was recently changed.\n\nIf you did not make this change, please contact our support team immediately.\n\nThanks,\nThe EduCore Team`;
+            const htmlMessage = `
+                <p>Hello ${user.firstName || user.username || 'User'},</p>
+                <p>This is a confirmation that the password for your EduCore account associated with the email <strong>${user.email}</strong> was recently changed.</p>
+                <p><strong>If you did not make this change, please contact our support team immediately.</strong></p>
+                <p>Thanks,<br>The EduCore Team</p>
+            `;
+            await sendMail({
+                to: user.email,
+                subject: 'EduCore - Your Password Has Been Changed',
+                text: textMessage,
+                html: htmlMessage
+            });
+            console.log(`[AUTH_SERVICE] Password change confirmation email sent to ${user.email}`);
+        } catch (emailError) {
+            console.error(`[AUTH_SERVICE] CRITICAL: Failed to send password change confirmation email to ${user.email} after password was changed:`, emailError.message);
+        }
+
+        return { message: 'Password changed successfully.' };
+
+    } catch (error) {
+        console.error(`[AUTH_SERVICE] Error in changePassword for user ${userId}:`, error.message);
+        if (!error.statusCode) {
+            error.statusCode = 500;
+        }
+        throw error;
+    }
+};
+
+
+
 // Request password reset
 const requestPasswordReset = async (email) => {
     const user = await User.findOne({ email });
@@ -166,6 +247,7 @@ module.exports = {
     registerUser,
     verifyEmail,
     loginUser,
+    changePassword,
     requestPasswordReset,
     resetPassword
 }

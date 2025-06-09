@@ -101,7 +101,7 @@ const getCourseDetails = async (identifier) => {
     const course = await courseQuery
         .populate({
             path: 'instructor', // Field name in Course schema that refs User
-            select: 'firstName lastName email' // Select fields you want to show for the instructor
+            select: 'firstName lastName email' // Select fields  to show for the instructor
         });
         
 
@@ -126,7 +126,7 @@ const getCourseDetails = async (identifier) => {
     console.log(`[COURSE_SERVICE] Course "${course.title}" has ${enrolledStudentCount} enrolled students.`);
 
 
-    // If you want to include modules and lessons later, you would populate them here as well,
+    // Modules and lessons can be included later, you would populate them here as well,
     // potentially filtering for lessons that are 'isPreviewable' for public view.
     // For now, we'll just return the main course details.
 

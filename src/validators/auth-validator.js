@@ -16,7 +16,30 @@ const loginSchema = Joi.object({
   password: Joi.string().min(6).required()
 });
 
+
+
+// Change-password validation schema
+const changePasswordSchema = Joi.object({
+    currentPassword: Joi.string().required().messages({
+        'any.required': 'Current password is required'
+    }),
+    newPassword: Joi.string().min(8).required()
+        .pattern(/^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?~`]).{8,}$/)
+        .messages({
+            'string.min': 'New password should have a minimum length of {#limit}',
+            'any.required': 'New password is required',
+            'string.pattern.base': 'New password must be at least 8 characters long and contain at least one letter, one number, and one special character.'
+        }),
+    confirmPassword: Joi.string().required().valid(Joi.ref('newPassword')).messages({
+        'any.only': 'New passwords do not match',
+        'any.required': 'Confirm new password is required'
+    })
+});
+
+
 module.exports = {
   registerSchema,
-  loginSchema
+  loginSchema,
+  changePasswordSchema
+
 };

@@ -11,8 +11,10 @@ router.post('/', isAuthenticated,isInstructor, createCourses);
 
 
 
-
+//get all courses route
 router.get('/', getAllCoursesController);
+
+//get courses by instructor name route
 router.get('/instructor/:name', getByInstructorNameController );
 
 //course details route

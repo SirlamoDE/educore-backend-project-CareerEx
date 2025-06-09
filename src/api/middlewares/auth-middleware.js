@@ -15,7 +15,7 @@ const isAuthenticated = async (req, res, next) => {
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         
-        const userIdFromToken = decoded.id || decoded.userId; // Adjust based on your token payload
+        const userIdFromToken = decoded.id || decoded.userId; // Adjust based on token payload
         if (!userIdFromToken) {
             return res.status(401).json({ message: 'Authentication failed: Token is invalid or malformed (missing user identifier)' });
         }
