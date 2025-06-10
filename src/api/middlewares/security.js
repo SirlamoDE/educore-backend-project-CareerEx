@@ -16,7 +16,8 @@ module.exports = function securityMiddleware(app) {
 
   // CORS: Restrict allowed origins
   const allowedOrigins = process.env.NODE_ENV === 'production'
-  ? [] // still empty for now but any frontend url can be added here 
+  ? [] // still empty for now but any frontend url can be added here
+   
   : ['http://localhost:6500', 'http://127.0.0.1:6500', 'http://localhost:5173'];
 
 
