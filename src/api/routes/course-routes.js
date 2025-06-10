@@ -6,12 +6,12 @@ const { isAuthenticated, isInstructor, isAdmin } = require('../middlewares/auth-
 
 
 
-// Create a course route
+// Create a course route for authenticated instructors
 router.post('/', isAuthenticated,isInstructor, createCourses);
 
 
 
-//get all courses route
+//get all courses route.Any one can access this route
 router.get('/', getAllCoursesController);
 
 //get courses by instructor name route

@@ -135,3 +135,11 @@ src/
   utils/              # Utility functions (mailer, etc.)
   validators/         # Joi and express-validator schemas
 ```
+
+```text
+
+# Project Url
+
+ <https://educore-backend-project-careerex-production.up.railway.app>
+
+``` 
