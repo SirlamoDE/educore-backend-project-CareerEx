@@ -1,7 +1,7 @@
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-const mongoSanitize = require('express-mongo-sanitize');
+
 
 module.exports = function securityMiddleware(app) {
  
