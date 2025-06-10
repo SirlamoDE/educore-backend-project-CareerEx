@@ -6,9 +6,13 @@ const mongoSanitize = require('express-mongo-sanitize');
 module.exports = function securityMiddleware(app) {
  
     // Trust proxy (important for backend host (Railway))
-  app.set('trust proxy', 1);
+    app.set('trust proxy', 1);
 
-  
+    // MongoDB Sanitization: Prevent NoSQL injection
+    app.use(mongoSanitize({
+    replaceWith: '_', // replace with underscore to avoid conflicts
+    }));
+
   // Helmet: Set security headers
   app.use(helmet({
     crossOriginResourcePolicy: false, // allows loading assets across origins
@@ -42,13 +46,11 @@ module.exports = function securityMiddleware(app) {
 }));
 
 
-  // MongoSanitize: Prevent NoSQL injection
-  app.use(mongoSanitize());
-
+  
   // Rate Limiting: prevent abuse
   const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // limit each IP to 100 requests per windowMs
+    max: 100,
     message: 'Too many requests from this IP, please try again later.',
   });
 
