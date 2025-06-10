@@ -8,11 +8,7 @@ module.exports = function securityMiddleware(app) {
     // Trust proxy (important for backend host (Railway))
     app.set('trust proxy', 1);
 
-    // MongoDB Sanitization: Prevent NoSQL injection
-    app.use(mongoSanitize({
-    replaceWith: '_', // replace with underscore to avoid conflicts
-    }));
-
+   
   // Helmet: Set security headers
   app.use(helmet({
     crossOriginResourcePolicy: false, // allows loading assets across origins
