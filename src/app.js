@@ -12,13 +12,16 @@ const { isAuthenticated } = require('./api/middlewares/auth-middleware');
 // Create an Express application
 const app = express();
 
-// Apply security middlewares
-securityMiddleware(app);
 
 
 // Middleware to parse JSON and URL-encoded data
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Apply security middlewares
+securityMiddleware(app);
+
+
 
 app.get('/', (req,res)=>{
     console.log(`The request url is: ${req.url}`);//added to monitor the url of the request source 
@@ -49,5 +52,28 @@ app.use('/api/courses/:identifier', courseRoutes);
 
 //course completion 
 app.use('/api/course/enrollments', enrollmentRoutes)
+
+//add 404 handler for undefined routes
+app.use((req, res, next) => {
+    res.status(404).json({
+        status: 'fail',
+        message: 'Resource not found',
+    });
+    next();
+});
+
+//Global error handler
+app.use((err, req, res, next) => {
+    console.error('Global Error Handler:', err);
+    const statusCode = err.statusCode || 500;
+    res.status(statusCode).json({
+        status: 'error',
+        message: err.message || 'Internal Server Error',
+        stack: process.env.NODE_ENV === 'production' ? null : err.stack,
+    });
+    
+});
+
+
 
 module.exports = app;

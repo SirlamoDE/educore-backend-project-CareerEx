@@ -80,9 +80,6 @@ const getCoursesByInstructorName = async (firstName, lastName) => {
   }
 };
 
-
-
-
 //course details
 //Milestone 3 sub_task 3: Implement the getCourseDetails function to fetch course details along with the number of enrolled students
 
@@ -134,10 +131,7 @@ const getCourseDetails = async (identifier) => {
     // We use toObject() or toJSON() to be able to add a new property to the Mongoose document
     const courseObject = course.toObject(); // Or course.toJSON();
     courseObject.enrolledStudentCount = enrolledStudentCount;
-
-    // You might want to explicitly remove certain fields from the course object if they shouldn't be public
-    // delete courseObject.__v; // Example
-
+    console.log(`[COURSE_SERVICE] Returning course details for "${course.title}" with enrolled count: ${enrolledStudentCount}`);
     return courseObject;
 };
 
