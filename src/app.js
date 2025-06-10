@@ -1,6 +1,6 @@
 const express = require('express');
-const helmet = require('helmet');
 
+const securityMiddleware = require('./api/middlewares/security');
 
 const authRoutes = require('./api/routes/auth-routes');
 const userRoutes = require('./api/routes/user-routes');
@@ -8,17 +8,15 @@ const courseRoutes = require('./api/routes/course-routes')
 const enrollmentRoutes = require('./api/routes/enrollment-routes');
 const { isAuthenticated } = require('./api/middlewares/auth-middleware');
 
+
+// Create an Express application
 const app = express();
 
-// Secure the app with various security middlewares
-app.use(
-  helmet({
-    crossOriginResourcePolicy: { policy: "cross-origin" }
-  })
-);
+// Apply security middlewares
+securityMiddleware(app);
 
 
-
+// Middleware to parse JSON and URL-encoded data
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -28,6 +26,7 @@ app.get('/', (req,res)=>{
 
 })
 
+// authentication routes
 app.use('/api/auth', authRoutes);
 
 //user routes
