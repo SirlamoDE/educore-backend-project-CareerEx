@@ -1,6 +1,5 @@
 const cors = require('cors');
 const helmet = require('helmet');
-const xss = require('xss-clean');
 const rateLimit = require('express-rate-limit');
 const mongoSanitize = require('express-mongo-sanitize');
 
@@ -17,7 +16,7 @@ module.exports = function securityMiddleware(app) {
   // CORS: Restrict allowed origins
   const allowedOrigins = process.env.NODE_ENV === 'production'
   ? [] // still empty for now but any frontend url can be added here
-   
+
   : ['http://localhost:6500', 'http://127.0.0.1:6500', 'http://localhost:5173'];
 
 
@@ -36,8 +35,6 @@ module.exports = function securityMiddleware(app) {
 
 }));
 
-  // XSS-clean: Prevent cross-site scripting
-  app.use(xss());
 
   // MongoSanitize: Prevent NoSQL injection
   app.use(mongoSanitize());
