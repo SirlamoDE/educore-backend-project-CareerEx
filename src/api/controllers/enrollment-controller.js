@@ -55,9 +55,9 @@ const courseCompletionStatusHandler = asyncHandler(async(req, res, next)=>{
 
   const { enrollmentId } = req.params;
   const { isCompleted } = req.body;
-  const requestingStudentId = req.user._id; // Or req.user.id, depending on your token payload
+  const requestingStudentId = req.user._id; // Or req.user.id, depending on token payload
 
-   //Condut basic validation
+   //Conduct basic validation
    if (typeof isCompleted !== 'boolean') {
         console.warn('[ENROLLMENT_CONTROLLER] updateEnrollmentStatus: Missing or invalid "isCompleted" in request body.');
         const error = new Error('Request body must include "isCompleted" as a boolean value (true or false).');
@@ -71,7 +71,6 @@ const courseCompletionStatusHandler = asyncHandler(async(req, res, next)=>{
       //Call the Service Function:
       // Delegate the core logic to the enrollmentService. 
       const updatedEnrollment = await enrollmentService.updateEnrollmentCompletionStatus(
-
         enrollmentId,
         requestingStudentId,
         isCompleted

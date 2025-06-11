@@ -18,7 +18,7 @@ router.get('/', getAllCoursesController);
 router.get('/instructor/:name', getByInstructorNameController );
 
 //course details route
-// router.get('/:courseId', getCourseDetailsController);
+//router.get('/:courseId', getCourseDetailsController);
 
 router.get('/:identifier', getCourseDetailsHandler);
 

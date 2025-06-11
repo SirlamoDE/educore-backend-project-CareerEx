@@ -86,22 +86,23 @@ const getCoursesByInstructorName = async (firstName, lastName) => {
 const getCourseDetails = async (identifier) => {
     console.log(`[COURSE_SERVICE] getCourseDetails (public) called for identifier: "${identifier}"`);
 
-    let courseQuery;
+    let course;
     // Determine if the identifier is likely an ObjectId or a slug
     if (mongoose.Types.ObjectId.isValid(identifier)) {
-        courseQuery = Course.findById(identifier);
+        course = await Course.findById(identifier).populate({
+          path: 'instructor', // Field name in Course schema that refs User
+          select: 'firstName lastName email' // Select fields to show for the instructor
+      });
     } else {
-        courseQuery = Course.findOne({ slug: identifier });
+        course = await Course.findOne({ slug: identifier }).populate({
+          path: 'instructor', // Field name in Course schema that refs User
+          select: 'firstName lastName email' // Select fields to show for the instructor  
+          // ;
+
+      });
     }
-
-    // Fetch the course and populate instructor details
-    const course = await courseQuery
-        .populate({
-            path: 'instructor', // Field name in Course schema that refs User
-            select: 'firstName lastName email' // Select fields  to show for the instructor
-        });
-        
-
+   
+    // If not found, return a 404 error
     if (!course) {
         console.warn('[COURSE_SERVICE] Course not found with identifier:', identifier);
         const error = new Error('Course not found.');
@@ -122,11 +123,6 @@ const getCourseDetails = async (identifier) => {
     const enrolledStudentCount = await Enrollment.countDocuments({ course: course._id });
     console.log(`[COURSE_SERVICE] Course "${course.title}" has ${enrolledStudentCount} enrolled students.`);
 
-
-    // Modules and lessons can be included later, you would populate them here as well,
-    // potentially filtering for lessons that are 'isPreviewable' for public view.
-    // For now, we'll just return the main course details.
-
     // Return the course object and add the enrolledStudentCount
     // We use toObject() or toJSON() to be able to add a new property to the Mongoose document
     const courseObject = course.toObject(); // Or course.toJSON();
@@ -134,10 +130,6 @@ const getCourseDetails = async (identifier) => {
     console.log(`[COURSE_SERVICE] Returning course details for "${course.title}" with enrolled count: ${enrolledStudentCount}`);
     return courseObject;
 };
-
-
-
-
 
 module.exports = {
   createCourse,

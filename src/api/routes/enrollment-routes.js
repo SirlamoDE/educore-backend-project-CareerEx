@@ -13,7 +13,7 @@ router.get('/course/:courseId/students', isAuthenticated, isInstructor, enrollme
 // Student views courses they are enrolled in
 router.get('/my-courses', isAuthenticated, enrollmentController.getStudentEnrolledCourses);
 
-//completion status route
+//update completion status route
 router.patch('/:enrollmentId/status',isAuthenticated, enrollmentController.courseCompletionStatusHandler)
 
 

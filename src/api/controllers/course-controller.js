@@ -52,12 +52,16 @@ const getCourseDetailsHandler = asyncHandler(async (req, res, next) => {
     // The service handles finding the course.
     const courseDetails = await courseService.getCourseDetails(identifier);
 
-   
+   //Data transformation to include enrolled student count
+    if (courseDetails?.error) {
+        return res.status(404).json({ error: courseDetails.error });
+    }
     res.status(200).json({
         success: true,
         message: 'Course details retrieved successfully.',
         data: courseDetails, // This will include the enrolledStudentCount
     });
+    next();
 });
 
 
