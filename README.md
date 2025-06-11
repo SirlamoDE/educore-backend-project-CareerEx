@@ -136,13 +136,8 @@ src/
   validators/         # Joi and express-validator schemas
 ```
 
-```text
+## Project AND Postman API Documentation URLs
 
-# Project Url
+[EduCore Production API](https://educore-backend-project-careerex-production.up.railway.app)
 
- [EduCore Production API](https://educore-backend-project-careerex-production.up.railway.app)
-
-
- [API DOCUMENTATION (Postman)](https://documenter.getpostman.com/view/33459968/2sB2x5Ht8K)
-
-```
+[API DOCUMENTATION (Postman)](https://documenter.getpostman.com/view/33459968/2sB2x5Ht8K)
